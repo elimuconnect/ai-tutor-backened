@@ -9,17 +9,17 @@ app.use(cors());
 app.use(bodyParser.json());
 
 app.post("/ask", async (req, res) => {
-  const { question, student } = req.body;
+  const { question } = req.body;
 
   try {
     const response = await axios.post(
-      "https://api.together.xyz/v1/chat/completions", // ✅ Together AI endpoint
+      "https://api.together.xyz/v1/chat/completions",
       {
-        model: "mistralai/Mixtral-8x7B-Instruct-v0.1", // ✅ Use a Together-supported model
+        model: "mistralai/Mixtral-8x7B-Instruct-v0.1",
         messages: [
           {
             role: "system",
-            content: "You are a helpful tutor for Kenyan students. Answer clearly."
+            content: "You are a helpful AI tutor for Kenyan students. Answer clearly and explain step-by-step where needed."
           },
           {
             role: "user",
@@ -30,7 +30,7 @@ app.post("/ask", async (req, res) => {
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.TOGETHER_API_KEY}`, // ✅ Set this in Render
+          Authorization: `Bearer ${process.env.TOGETHER_API_KEY}`,
           "Content-Type": "application/json"
         }
       }
@@ -39,8 +39,9 @@ app.post("/ask", async (req, res) => {
     const answer = response.data.choices[0].message.content;
     res.json({ answer });
   } catch (err) {
-    console.error("❌ Together AI error:", err.response?.data || err.message);
-    res.status(500).json({ error: "Error talking to Together AI." });
+    const errorDetails = err.response?.data || err.message;
+    console.error("❌ Together AI error:", errorDetails);
+    res.status(500).json({ error: "Together API error", details: errorDetails });
   }
 });
 
@@ -50,5 +51,5 @@ app.get("/", (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`AI Tutor is running on port ${PORT}`);
+  console.log(`🚀 AI Tutor server running on port ${PORT}`);
 });
