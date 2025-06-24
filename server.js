@@ -15,7 +15,7 @@ app.post("/ask", async (req, res) => {
     const response = await axios.post(
       "https://api.openai.com/v1/chat/completions",
       {
-        model: "gpt-3.5-turbo", // or "gpt-4" if your account has access
+        model: "gpt-3.5-turbo",
         messages: [
           { role: "system", content: "You are a helpful tutor for Kenyan students. Answer clearly." },
           { role: "user", content: question }
@@ -32,8 +32,14 @@ app.post("/ask", async (req, res) => {
     const answer = response.data.choices[0].message.content;
     res.json({ answer });
   } catch (err) {
+    console.error("❌ OpenAI error:", err.response?.data || err.message);
     res.status(500).json({ error: "Error talking to AI." });
   }
+});
+
+// Add basic home route to avoid "Cannot GET /"
+app.get("/", (req, res) => {
+  res.send("✅ AI Tutor backend is running. Use POST /ask to get answers.");
 });
 
 const PORT = process.env.PORT || 5000;
