@@ -13,18 +13,25 @@ app.post("/ask", async (req, res) => {
 
   try {
     const response = await axios.post(
-      "https://api.openai.com/v1/chat/completions",
+      "https://api.together.xyz/v1/chat/completions", // ✅ Together AI endpoint
       {
-        model: "gpt-3.5-turbo",
+        model: "mistralai/Mixtral-8x7B-Instruct-v0.1", // ✅ Use a Together-supported model
         messages: [
-          { role: "system", content: "You are a helpful tutor for Kenyan students. Answer clearly." },
-          { role: "user", content: question }
+          {
+            role: "system",
+            content: "You are a helpful tutor for Kenyan students. Answer clearly."
+          },
+          {
+            role: "user",
+            content: question
+          }
         ],
         temperature: 0.5
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+          Authorization: `Bearer ${process.env.TOGETHER_API_KEY}`, // ✅ Set this in Render
+          "Content-Type": "application/json"
         }
       }
     );
@@ -32,12 +39,11 @@ app.post("/ask", async (req, res) => {
     const answer = response.data.choices[0].message.content;
     res.json({ answer });
   } catch (err) {
-    console.error("❌ OpenAI error:", err.response?.data || err.message);
-    res.status(500).json({ error: "Error talking to AI." });
+    console.error("❌ Together AI error:", err.response?.data || err.message);
+    res.status(500).json({ error: "Error talking to Together AI." });
   }
 });
 
-// Add basic home route to avoid "Cannot GET /"
 app.get("/", (req, res) => {
   res.send("✅ AI Tutor backend is running. Use POST /ask to get answers.");
 });
