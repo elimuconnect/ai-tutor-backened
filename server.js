@@ -59,13 +59,20 @@ app.post("/ask", async (req, res) => {
     const response = await axios.post(
       "https://api.together.xyz/v1/chat/completions",
       {
-        model: "mistral-7b-instruct", // use Together AI model
+        model: "mistral-7b-instruct",
         messages: [
-          { role: "system", content: "You are a helpful Kenyan AI tutor. Be brief and clear." },
-          { role: "user", content: question }
+          {
+            role: "system",
+            content:
+              "You are a helpful AI tutor for Kenyan students. Keep answers short, accurate, and clear. Use bullet points if listing items."
+          },
+          {
+            role: "user",
+            content: question
+          }
         ],
         temperature: 0.5,
-        max_tokens: 500 // keep answers short
+        max_tokens: 500
       },
       {
         headers: {
@@ -75,8 +82,19 @@ app.post("/ask", async (req, res) => {
       }
     );
 
-    const answer = response.data.choices[0].message.content;
-    res.json({ answer });
+    let content = response.data.choices[0].message.content;
+
+    // Optional: Format long responses into 2-column structure
+    const lines = content.split(/\n|•/).filter(line => line.trim());
+    if (lines.length >= 4) {
+      const mid = Math.ceil(lines.length / 2);
+      const col1 = lines.slice(0, mid).map(line => "• " + line.trim()).join("\n");
+      const col2 = lines.slice(mid).map(line => "• " + line.trim()).join("\n");
+
+      content = `${col1}||COLUMN_BREAK||${col2}`;
+    }
+
+    res.json({ answer: content });
 
   } catch (err) {
     console.error("❌ AI Error:", err.response?.data || err.message);
@@ -84,7 +102,7 @@ app.post("/ask", async (req, res) => {
   }
 });
 
-// Test route
+// Root test route
 app.get("/", (req, res) => {
   res.send("✅ AI Tutor backend running. Use POST /ask to talk to AI.");
 });
