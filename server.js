@@ -8,14 +8,14 @@ const app = express();
 app.use(cors());
 app.use(bodyParser.json());
 
-// ====== RATE LIMIT CONTROL START ======
+// ====== LIMIT CONTROL START ======
 
 // Track per-student & global requests
 const studentRequests = {};
 const GLOBAL_LIMIT = 60; // Max total requests/minute
 let globalRequestCount = 0;
 
-// Reset counters every minute
+// Reset counts every 60 seconds
 setInterval(() => {
   globalRequestCount = 0;
   for (const student in studentRequests) {
@@ -23,7 +23,7 @@ setInterval(() => {
   }
 }, 60 * 1000);
 
-// Middleware to enforce rate limits
+// Middleware to enforce limits
 app.use("/ask", (req, res, next) => {
   const student = req.body.student || "unknown";
   globalRequestCount++;
@@ -46,12 +46,12 @@ app.use("/ask", (req, res, next) => {
     });
   }
 
-  next(); // Continue to the actual /ask handler
+  next();
 });
 
-// ====== RATE LIMIT CONTROL END ======
+// ====== LIMIT CONTROL END ======
 
-// Main route to send question to Together AI
+// MAIN AI ROUTE
 app.post("/ask", async (req, res) => {
   const { question, student } = req.body;
 
@@ -59,9 +59,9 @@ app.post("/ask", async (req, res) => {
     const response = await axios.post(
       "https://api.together.xyz/v1/chat/completions",
       {
-        model: "mistralai/Mistral-7B-Instruct-v0.1", // ✅ Correct model name
+        model: "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
         messages: [
-          { role: "system", content: "You are a helpful Kenyan AI tutor. Be brief and clear." },
+          { role: "system", content: "You are a helpful Kenyan tutor. Be clear and brief." },
           { role: "user", content: question }
         ],
         temperature: 0.5,
@@ -84,12 +84,12 @@ app.post("/ask", async (req, res) => {
   }
 });
 
-// Default route
+// Home route
 app.get("/", (req, res) => {
-  res.send("✅ Elimu Connect AI Tutor backend is running. Use POST /ask.");
+  res.send("✅ AI Tutor backend running. Use POST /ask to talk to the AI.");
 });
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 AI Tutor backend is running on port ${PORT}`);
+  console.log(`🚀 AI Tutor running on port ${PORT}`);
 });
