@@ -1,15 +1,57 @@
-{
-  "name": "ai-tutor",
-  "version": "1.0.0",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js"
-  },
-  "dependencies": {
-    "axios": "^1.6.0",
-    "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
-    "express": "^4.18.2",
-    "body-parser": "^1.20.2"
+import express from "express";
+import cors from "cors";
+import dotenv from "dotenv";
+import axios from "axios";
+
+dotenv.config(); // MUST be first
+
+const app = express();
+
+// ✅ Middleware (ORDER MATTERS)
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST"],
+  allowedHeaders: ["Content-Type"]
+}));
+
+app.use(express.json()); // replaces body-parser
+
+// ✅ Health check
+app.get("/", (req, res) => {
+  res.send("✅ AI Tutor backend running. Use POST /ask to talk to the AI.");
+});
+
+// ✅ Prevent 404 confusion
+app.get("/ask", (req, res) => {
+  res.status(405).json({ error: "Use POST /ask" });
+});
+
+// ✅ MAIN ENDPOINT
+app.post("/ask", async (req, res) => {
+  try {
+    const { question, student } = req.body || {};
+
+    if (!question) {
+      return res.status(400).json({ error: "Question is required" });
+    }
+
+    // 🔹 TEMP TEST (IMPORTANT)
+    // Comment this out after confirming frontend works
+    return res.json({
+      answer: `✅ Backend OK. Question received: "${question}" (${student || "unknown"})`
+    });
+
+  } catch (err) {
+    console.error("SERVER ERROR:", err);
+    res.status(500).json({
+      error: "Internal server error",
+      details: err.message
+    });
   }
-}
+});
+
+// ✅ Render port handling
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log("Server running on port", PORT);
+});
