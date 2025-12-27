@@ -10,12 +10,10 @@ app.use(bodyParser.json());
 
 // ====== LIMIT CONTROL START ======
 
-// Track per-student & global requests
 const studentRequests = {};
-const GLOBAL_LIMIT = 60; // Max total requests/minute
+const GLOBAL_LIMIT = 60;
 let globalRequestCount = 0;
 
-// Reset counts every 60 seconds
 setInterval(() => {
   globalRequestCount = 0;
   for (const student in studentRequests) {
@@ -23,9 +21,9 @@ setInterval(() => {
   }
 }, 60 * 1000);
 
-// Middleware to enforce limits
 app.use("/ask", (req, res, next) => {
-  const student = req.body.student || "unknown";
+  const student = (req.body && req.body.student) || "unknown"; // ✅ FIXED
+
   globalRequestCount++;
 
   if (!studentRequests[student]) {
@@ -49,11 +47,18 @@ app.use("/ask", (req, res, next) => {
   next();
 });
 
-// ====== LIMIT CONTROL END ======
+// Silence GET /ask 404
+app.get("/ask", (req, res) => {
+  res.status(405).json({ error: "Use POST /ask" });
+});
 
 // MAIN AI ROUTE
 app.post("/ask", async (req, res) => {
-  const { question, student } = req.body;
+  const { question } = req.body || {};
+
+  if (!question) {
+    return res.status(400).json({ error: "Question is required" });
+  }
 
   try {
     const response = await axios.post(
@@ -71,11 +76,15 @@ app.post("/ask", async (req, res) => {
         headers: {
           Authorization: `Bearer ${process.env.TOGETHER_API_KEY}`,
           "Content-Type": "application/json"
-        }
+        },
+        timeout: 20000 // ✅ prevents hanging
       }
     );
 
-    const answer = response.data.choices[0].message.content;
+    const answer =
+      response.data?.choices?.[0]?.message?.content ||
+      "⚠️ AI is currently busy. Please try again.";
+
     res.json({ answer });
 
   } catch (err) {
